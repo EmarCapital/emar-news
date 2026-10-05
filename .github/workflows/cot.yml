@@ -1,0 +1,41 @@
+name: COT → Telegram
+
+on:
+  push:
+    paths:
+      - "cot/EMAR_COT.txt"
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Проверка секретов
+        env:
+          TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          CHAT: ${{ secrets.TG_COT_CHAT_ID }}
+        run: |
+          test -n "$TOKEN" || { echo "нет секрета TG_BOT_TOKEN"; exit 1; }
+          test -n "$CHAT"  || { echo "нет секрета TG_COT_CHAT_ID"; exit 1; }
+
+      - name: Текст отчёта в чат
+        env:
+          TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          CHAT: ${{ secrets.TG_COT_CHAT_ID }}
+        run: |
+          curl -sS --fail-with-body -X POST "https://api.telegram.org/bot${TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${CHAT}" \
+            --data-urlencode "parse_mode=HTML" \
+            --data-urlencode "disable_web_page_preview=true" \
+            --data-urlencode "text@cot/EMAR_COT.txt"
+
+      - name: Файл для терминала в чат
+        env:
+          TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          CHAT: ${{ secrets.TG_COT_CHAT_ID }}
+        run: |
+          curl -sS --fail-with-body -X POST "https://api.telegram.org/bot${TOKEN}/sendDocument" \
+            -F "chat_id=${CHAT}" \
+            -F "document=@cot/EMAR_COT.csv" \
+            -F "caption=EMAR_COT.csv — строка для терминала, EXECUTOR читает её сам"
